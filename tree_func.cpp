@@ -18,7 +18,7 @@ void AskForAPerson (Node *node)
     if (node->left != NULL && node->right != NULL)
     {
         fprintf (stderr, CYAN "Is it %s?\n" NORMAL, node->characteristic);
-        fprintf (stderr, GREEN "y(yes)/n(no)\n" NORMAL);
+        fprintf (stderr, GREEN "y(yes)/n(no)\n" BLUE);
         ans = GetAnswer ();
         clear_buffer ();
         switch (ans)
@@ -42,8 +42,10 @@ void AskForAPerson (Node *node)
         {
             case 'y':
                 fprintf (stderr, GREEN "Congratulations! You have found your person\\character!\n" NORMAL);
+                clear_buffer ();
                 break;
-            case 'n': {
+            case 'n': 
+            {
 
                 fprintf (stderr, MAGENTA "It's a pitty that I don't have your character in my database." 
                     "Tell me the name of the person\\character\n" BLUE);
@@ -59,26 +61,11 @@ void AskForAPerson (Node *node)
                 // new_characteristic = (char *)realloc (new_characteristic, 
                 //   sizeof (char) * ((size_t)my_strlen (new_characteristic) + 1));
                 
-                fprintf (stderr, MAGENTA "Does %s acquire this characteristic ?\n"
-                    GREEN "Enter y(yes)\\n(no)\n" BLUE, node->characteristic);
-                ans = GetAnswer ();
-                switch (ans)
-                {
-                    case 'y':
-                        node->left = CreateNode (node->characteristic, node);
-                        node->right = CreateNode (Name, node);
-                        my_strcpy (new_characteristic, node->characteristic);
-                        break;
-                    case 'n':
-                        node->left = CreateNode (Name, node);
-                        node->right = CreateNode (node->characteristic, node);
-                        if (my_strlen (new_characteristic) > my_strlen (node->characteristic))
-                            node->characteristic = (char *)realloc (node->characteristic, (size_t)my_strlen (new_characteristic) + 1);
-                        my_strcpy (new_characteristic, node->characteristic);
-                        
-                        break;
-                    default: assert (0);
-                }
+                node->left = CreateNode (Name, node);
+                    node->right = CreateNode (node->characteristic, node);
+                    if (my_strlen (new_characteristic) > my_strlen (node->characteristic))
+                        node->characteristic = (char *)realloc (node->characteristic, (size_t)my_strlen (new_characteristic) + 1);
+                    my_strcpy (new_characteristic, node->characteristic);
                 free (Name);
                 free (new_characteristic);
                 break;
@@ -121,15 +108,19 @@ Node *ReadNode (FILE *stream, char *buffer, size_t *pos, Node *parent)
         (*pos) += 2; // Skipping '(' and ' " '
         char *data = (char *)calloc (30, sizeof (char));
         int delta = 0;
-        sscanf (buffer, "\"" "%[^\"]" "\"%n", data, &delta);
+        sscanf (buffer + *pos, "%[^\"]" "\"%n", data, &delta);
         Node *new_node = CreateNode (data, parent);
-        (*pos) += (size_t)delta; // skipping data
-        (*pos) ++; // skipping ' " '
+        (*pos) += (size_t)delta; // skipping data and ' " '
         new_node->left = ReadNode (stream, buffer, pos, new_node);
         new_node->right = ReadNode (stream, buffer, pos, new_node);
         (*pos)++;
         free (data);
         return new_node;
+    }
+    else if (((buffer + *pos)[0] == 'n') &&  ((buffer + *pos)[1] == 'i') && ((buffer + *pos)[2] == 'l'))
+    {
+        ((*pos) +=3);
+        return NULL;
     }
 }
 
@@ -170,7 +161,7 @@ void GraphVizNodeInitialise (FILE *stream, Node *node)
     {
         if (node->left != NULL) GraphVizNodeInitialise (stream, node->left);
         assert (node->characteristic);
-        fprintf (stream, "\"Node%p\" [shape = record, label = \" { <f1>  %s | { <f2> Left | <f3> Right } } \"];\n ", 
+        fprintf (stream, "\"Node%p\" [shape = record, style = \"filled\",fillcolor=\"lightgrey\" label = \" { <f1>  %s | { <f2> Left | <f3> Right } } \"];\n ", 
             node, node->characteristic);
         if (node->right != NULL) GraphVizNodeInitialise (stream, node->right);
     }
@@ -204,8 +195,8 @@ void NodeDestructor (Node *node)
     if (node->parent != NULL)
     {
         if (node == node->parent->left) node->parent->left = NULL;
-        if (node == node->parent->right) node->parent->right == NULL;
-        free (node->characteristic);
-        free (node);
+        if (node == node->parent->right) node->parent->right = NULL;
     }
+    free (node->characteristic);
+    free (node);
 }

@@ -1,16 +1,20 @@
-#include <stdio.h>
 #include "tree_func.hpp"
+#include "extraction.hpp"
 
 int main ()
 {
-    char nothing_str[9] = "Nothing";
-    Node nothing = {nothing_str, NULL, NULL, NULL};
-    Node *node_ptr = &nothing;
+    FILE *repository = fopen ("repository.txt", "r");
+    size_t pos = 0;
+    char *buffer = (char*)calloc (file_length (repository) + 1, 1);
+    file_to_buffer (repository, buffer);
+    Node *node_ptr = ReadNode (repository, buffer, &pos, NULL); 
+    fclose (repository);
     int continue_flag = 'y';
+    free (buffer);
     while (continue_flag == 'y')
     {
         AskForAPerson (node_ptr);
-        clear_buffer ();
+        // clear_buffer ();
         fprintf (stderr, GREEN "If you wanna continue Akinator prigramm? Enter y(yes)\\n(no)\n" BLUE);
         continue_flag = GetAnswer ();
         clear_buffer();
@@ -27,9 +31,9 @@ int main ()
         } 
         AkinDump (node_ptr);
     }
-    FILE *repository = fopen ("repository.txt", "w");
+    repository = fopen ("repository.txt", "w");
     WriteNode (node_ptr, repository);
-
+    fclose (repository);
     NodeDestructor (node_ptr);
     return 0;
 }
